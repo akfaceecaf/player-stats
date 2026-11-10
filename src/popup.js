@@ -10,7 +10,11 @@ const scanButton = document.getElementById("scan");
 // Send scan message to message handler when clicking scan
 scanButton.addEventListener("click", async () => {
   const tab = await getCurrentTab();
-  chrome.scripting.executeScript({
+  chrome.scripting.insertCSS({
+    target: { tabId: tab.id },
+    files: ["highlight.css"],
+  });
+  await chrome.scripting.executeScript({
     target: { tabId: tab.id },
     files: ["src/content.js"],
   });

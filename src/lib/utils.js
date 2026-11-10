@@ -2,7 +2,7 @@ import { SERVER_URL } from "../service-worker.js";
 import AhoCorasick from "./ahocorasick.js";
 
 export function toSearchString(player) {
-  return player.firstName + " " + player.lastName;
+  return player.firstName.toLowerCase() + " " + player.lastName.toLowerCase();
 } // ensure that there are no overlaps of any of the string matches
 
 export const filterMatches = (matches) => {

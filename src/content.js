@@ -1,8 +1,8 @@
 (() => {
   const SKIP_SELECTORS = "style, script, button";
 
+  // get list of valid text nodes
   function getValidNodes() {
-    // get list of valid text nodes
     let walker = document.createTreeWalker(
       document.body,
       NodeFilter.SHOW_TEXT,
@@ -31,7 +31,25 @@
       console.log("Error");
       return;
     }
-    console.log(response.data);
+
+    // iterate through all nodes, for every valid node add highlight range
+    const highlight = new Highlight();
+    const res = response.data;
+    res.forEach((matches, i) => {
+      if (matches.length > 0) {
+        // trace match back to node using index
+        const node = nodes[i];
+        // for each match create a new range, add to highlight
+        matches.forEach(({ start, end }) => {
+          const range = new Range();
+          range.setStart(node, start);
+          range.setEnd(node, end + 1);
+          highlight.add(range);
+        });
+      }
+    });
+
+    CSS.highlights.set("player-highlight", highlight);
   }
 
   parse();

@@ -26,7 +26,7 @@ const handleMessages = async (message, sender, sendResponse) => {
       const data = [];
       message.texts.forEach((text) => {
         const matches = searchText(
-          text,
+          text.toLowerCase(),
           players.map(({ token }) => token),
         );
         const filteredMatches = filterMatches(matches);
