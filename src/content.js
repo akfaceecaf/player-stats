@@ -293,6 +293,24 @@
     popup.style.left = `${clientRect.left + window.scrollX}px`;
     popup.style.top = `${clientRect.top + window.scrollY}px`;
     shadow.appendChild(popup);
+    positionPopup(popup, popupPlayer.range);
+  }
+
+  function positionPopup(popup, range) {
+    const { width, height } = popup.getBoundingClientRect();
+    const clientRect = range.getBoundingClientRect();
+
+    const margin = 25;
+    const left = Math.max(
+      margin,
+      Math.min(clientRect.left, window.innerWidth - width - margin),
+    );
+    const top = Math.max(
+      margin,
+      Math.min(clientRect.top, window.innerHeight - height - margin),
+    );
+    popup.style.left = `${left + window.scrollX}px`;
+    popup.style.top = `${top + window.scrollY}px`;
   }
 
   // EVENT LISTENERS
