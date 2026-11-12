@@ -1,10 +1,11 @@
-import {
-  searchText,
-  filterMatches,
-  toSearchString,
-  getPlayers,
-} from "./lib/utils.js";
-export const SERVER_URL = "./static/players.json";
+import { searchText, filterMatches, toSearchString } from "./lib/utils.js";
+const API_URL = "http://127.0.0.1:8000";
+
+// Fetch list of NBA players
+const getPlayers = async () => {
+  const res = await fetch(`${API_URL}/players`);
+  return res.json();
+};
 
 let players;
 

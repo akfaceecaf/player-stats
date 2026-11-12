@@ -4,6 +4,7 @@
   "version": "0.1.0",
   "description": "Highlights text that matches an NBA player's name and shows a popup of their stats when hovering over that text.",
   "permissions": ["storage", "scripting", "activeTab"],
+  "host_permissions": ["http://127.0.0.1:8000/*"],
   "background": {
     "service_worker": "src/service-worker.js",
     "type": "module"
