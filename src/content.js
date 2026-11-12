@@ -183,6 +183,11 @@
       console.log(response.message);
       return;
     }
+    // if hovered player changes while looking up player data, then don't show popup and reset
+    if (popupPlayer !== hoveredPlayer) {
+      popupPlayer = null;
+      return;
+    }
     popupData = response.data;
 
     // render popup once all data is returned and loaded
@@ -288,14 +293,31 @@
     popup.style.left = `${clientRect.left + window.scrollX}px`;
     popup.style.top = `${clientRect.top + window.scrollY}px`;
     shadow.appendChild(popup);
-    // document.body.appendChild(popup);
   }
 
   // EVENT LISTENERS
+  POPUP_DELAY = 1000;
+  let timeoutID;
+  let hoveredPlayer;
+
   // add event listener for mouse pointer position
   document.addEventListener("pointermove", (e) => {
     // check if pointer is on a valid player node and range
     const player = onPlayer(e.clientX, e.clientY);
-    if (player !== popupPlayer) showPopup(player);
+
+    // add delay for popup to check if hover was intentional
+    if (!player || player !== hoveredPlayer) {
+      clearTimeout(timeoutID);
+      timeoutID = null;
+      if (player) {
+        hoveredPlayer = player;
+        timeoutID = setTimeout(() => {
+          showPopup(player);
+          timeoutID = null;
+        }, POPUP_DELAY);
+      } else {
+        hoveredPlayer = null;
+      }
+    }
   });
 })();
