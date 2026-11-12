@@ -1,29 +1,5 @@
-.bounding-box {
-  background: yellow;
-  position: absolute;
-}
-
 ::highlight(player-highlight) {
   text-decoration: underline;
   text-decoration-color: rgb(234, 88, 88);
   text-decoration-thickness: 0.2rem;
 }
-
-.popup {
-  position: absolute;
-  background-color: gray;
-}
-
-/* 
-font-family verdana, sans-serif, helvetica
-header
-color - black
-button
-color - rgb(143, 84, 0)
-table
-column color - #a52322
-column background color - rgb(238, 238, 238)
-cell color - black
-
-
-*/

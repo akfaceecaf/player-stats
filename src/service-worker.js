@@ -41,14 +41,21 @@ async function parse(texts) {
   }
 }
 
-async function getPlayer(playerId) {
-  return await players.find((p) => p.playerId === playerId);
+async function getPlayerData(playerId) {
+  const res = await fetch(chrome.runtime.getURL("./static/data.json")).then(
+    (res) => res.json(),
+  );
+  return res[playerId];
 }
 
 async function lookup(playerId) {
-  const data = await getPlayer(playerId);
-  if (!data) return { ok: false, message: "Could not fetch data" };
-  return { ok: true, data };
+  try {
+    const data = await getPlayerData(playerId);
+    if (!data) throw new Error("No player data");
+    return { ok: true, data };
+  } catch (e) {
+    return { ok: false, message: e.message };
+  }
 }
 
 const handleMessages = async (message, sender, sendResponse) => {

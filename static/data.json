@@ -1,0 +1,89 @@
+{
+  "1629029": {
+    "stats": [
+      {
+        "season": "2026-27",
+        "games": 11,
+        "pts": 9.6,
+        "rbs": 5.5,
+        "asts": 2.0,
+        "fgPct": 0.712,
+        "fg3Pct": 1.0,
+        "ftPct": 0.7
+      },
+      {
+        "season": "2025-26",
+        "games": 444,
+        "pts": 9.3,
+        "rbs": 5.8,
+        "asts": 1.1,
+        "fgPct": 0.702,
+        "fg3Pct": 0.5,
+        "ftPct": 0.675
+      }
+    ],
+    "meta": {
+      "team": "Los Angeles Lakers",
+      "position": "Point Guard",
+      "imageUrl": "https://www.basketball-reference.com/req/202610140/images/headshots/doncilu01.jpg"
+    }
+  },
+  "200755": {
+    "stats": [
+      {
+        "season": "2026-27",
+        "games": 11,
+        "pts": 9.6,
+        "rbs": 5.5,
+        "asts": 2.0,
+        "fgPct": 0.712,
+        "fg3Pct": 1.0,
+        "ftPct": 0.7
+      },
+      {
+        "season": "2025-26",
+        "games": 444,
+        "pts": 9.3,
+        "rbs": 5.8,
+        "asts": 1.1,
+        "fgPct": 0.702,
+        "fg3Pct": 0.5,
+        "ftPct": 0.675
+      }
+    ],
+    "meta": {
+      "team": "Utah Jazz",
+      "position": "Shooting Guard",
+      "imageUrl": "https://www.basketball-reference.com/req/202610140/images/headshots/sextoco01.jpg"
+    }
+  },
+  "1629012": {
+    "stats": [
+      {
+        "season": "2026-27",
+        "games": 11,
+        "pts": 2.6,
+        "rbs": 5.5,
+        "asts": 200.0,
+        "fgPct": 0.712,
+        "fg3Pct": 1.0,
+        "ftPct": 0.7
+      },
+      {
+        "season": "2025-26",
+        "games": 444,
+        "pts": 9.3,
+        "rbs": 100.8,
+        "asts": 1.1,
+        "fgPct": 0.702,
+        "fg3Pct": 0.5,
+        "ftPct": 0.675
+      }
+    ],
+    "meta": {
+      "team": "Los Angeles Clippers",
+      "position": "Point Guard",
+      "imageUrl": "https://www.basketball-reference.com/req/202610140/images/headshots/redicjj01.jpg"
+    }
+  }
+}
