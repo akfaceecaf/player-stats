@@ -1,8 +1,7 @@
 from fastapi import FastAPI
-
-from src.classes.Metadata import Metadata
-from src.classes.Player import Player
-from src.classes.AveragesStatSet import AveragesStatSet
+from src.classes.metadata import Metadata
+from src.classes.player import Player
+from src.classes.stat_sets import AveragesStatSet
 from src.player import get_image_url, get_metadata, get_players
 from src.stats import get_player_stats
 
