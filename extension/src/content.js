@@ -100,13 +100,16 @@
     return null;
   }
 
-  // POPUP FUNCTIONS
+  // POPUP
   const SUMM_TBL_C_M = {
-    Season: "season",
-    G: "games",
+    Season: "seasonId",
+    Team: "teamAbv",
+    G: "gp",
     PTS: "pts",
-    TRB: "rbs",
-    AST: "asts",
+    REB: "reb",
+    AST: "ast",
+    STL: "stl",
+    BLK: "blk",
     "FG%": "fgPct",
     "FG3%": "fg3Pct",
     "FT%": "ftPct",
@@ -114,7 +117,7 @@
 
   const SUMMARY_MAP = {
     Position: "position",
-    Team: "team",
+    Team: "teamName",
     ImageUrl: "imageUrl",
   };
 
@@ -219,7 +222,7 @@
     // ***MEDIA DIV
     const media = el("div", "media-item");
     const img = el("img", "player-image");
-    img.setAttribute("src", popupData.meta[SUMMARY_MAP["ImageUrl"]]);
+    img.setAttribute("src", popupData[SUMMARY_MAP["ImageUrl"]]);
     media.appendChild(img);
     meta.appendChild(media);
 
@@ -228,9 +231,9 @@
     const h1 = el("h1");
     h1.textContent = `${popupPlayer.player.firstName} ${popupPlayer.player.lastName}`;
     const p1 = el("p");
-    p1.textContent = `Position: ${popupData.meta[SUMMARY_MAP["Position"]]}`;
+    p1.textContent = `Position: ${popupData.metadata[SUMMARY_MAP["Position"]]}`;
     const p2 = el("p");
-    p2.textContent = `Team: ${popupData.meta[SUMMARY_MAP["Team"]]}`;
+    p2.textContent = `Team: ${popupData.metadata[SUMMARY_MAP["Team"]]}`;
     div.appendChild(h1);
     div.appendChild(p1);
     div.appendChild(p2);

@@ -43,10 +43,10 @@ async function parse(texts) {
 }
 
 async function getPlayerData(playerId) {
-  const res = await fetch(chrome.runtime.getURL("./static/data.json")).then(
-    (res) => res.json(),
+  const res = await fetch(`${API_URL}/stats/${playerId}`).then((res) =>
+    res.json(),
   );
-  return res[playerId];
+  return res;
 }
 
 async function lookup(playerId) {

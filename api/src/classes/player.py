@@ -9,6 +9,16 @@ class Player:
     fullName: str
     isActive: bool
 
+    @classmethod
+    def from_api_resp(cls, res):
+        return cls(
+            res["id"],
+            res["first_name"],
+            res["last_name"],
+            res["full_name"],
+            res["is_active"],
+        )
+
     def to_json(self):
         return {
             "playerId": self.playerId,
