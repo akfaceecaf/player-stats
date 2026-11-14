@@ -102,18 +102,34 @@
 
   // POPUP
   const SUMM_TBL_C_M = {
-    Season: "seasonId",
-    Team: "teamAbv",
-    G: "gp",
-    PTS: "pts",
-    REB: "reb",
-    AST: "ast",
-    STL: "stl",
-    BLK: "blk",
-    "FG%": "fgPct",
-    "FG3%": "fg3Pct",
-    "FT%": "ftPct",
+    Season: { key: "seasonId", format: "string" },
+    Team: { key: "teamAbv", format: "string" },
+    G: { key: "gp", format: "int" },
+    PTS: { key: "pts", format: "float" },
+    REB: { key: "reb", format: "float" },
+    AST: { key: "ast", format: "float" },
+    STL: { key: "stl", format: "float" },
+    BLK: { key: "blk", format: "float" },
+    "FG%": { key: "fgPct", format: "percent" },
+    "FG3%": { key: "fg3Pct", format: "percent" },
+    "FT%": { key: "ftPct", format: "percent" },
   };
+
+  const FORMAT_MAP = {
+    string: (s) => s,
+    int: (s) => s,
+    float: (s) => s.toFixed(1),
+    percent: (s) =>
+      new Intl.NumberFormat("en-US", {
+        style: "percent",
+        minimumFractionDigits: 1,
+        maximumFractionDigits: 1,
+      }).format(s),
+  };
+
+  function formatData(value, format) {
+    return FORMAT_MAP[format](value);
+  }
 
   const SUMMARY_MAP = {
     Position: "position",
@@ -125,15 +141,29 @@
   const shadow = host.attachShadow({ mode: "closed" });
   const sheet = new CSSStyleSheet();
   sheet.replaceSync(`
+  * {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  }
+
+  h1 {
+    font-size: 1.3rem;
+  }
+
+  p {
+    font-size: 0.8rem;
+  }
+
   .popup {
     z-index: 999999;
     position: absolute;
-    max-height: 300px;
     width: 450px;
-    overflow: auto;
+    max-height: 300px;
+    overflow-y: auto;
     display: flex;
     flex-direction: column;
-    gap: 0.1rem;
+    gap: 0.5rem;
     padding: 0.5rem;
     margin: 0.5rem;
     font-family: Verdana, sans-serif, Helvetica;
@@ -143,18 +173,36 @@
   }
 
   .meta {
-    display: flex;
+    display: grid;
+    grid-template-columns: minmax(0, 3fr) minmax(0, 4fr);
     gap: 0.5rem;
+  }
+
+  .player-image {
+    width: 100%;
   }
 
   .metadata {
     display: flex;
     flex-direction: column;
+    overflow-wrap: break-word;
+    padding: 0.25rem;
+    gap: 0.25rem;
+  }
+
+  .summary {
+    border: 1px solid black;
+  }
+
+  .summary-heading {
+    margin-bottom: 0.3rem;
+    color: rgb(143, 84, 0);
   }
 
   .stats-table {
-    width: 80%;
-    gap: 0rem;
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.7rem;
     border: 1px solid black;
   }
 
@@ -164,7 +212,10 @@
     color: rgb(165, 35, 34);
   }
 
-  .close-button {
+  .stats-table-cell {
+    padding: 2px;
+    gap: 0px;
+    border: 1px solid black;
   }
   `);
   shadow.adoptedStyleSheets = [sheet];
@@ -256,7 +307,7 @@
     const row = el("tr", "stats-table-col-head");
     // Column Names
     cols.forEach((col) => {
-      const cell = el("td");
+      const cell = el("td", "stats-table-cell");
       const cellText = document.createTextNode(col);
       cell.appendChild(cellText);
       row.appendChild(cell);
@@ -265,12 +316,13 @@
 
     // Row Values
     popupData.stats.forEach((entry, i) => {
-      const row = el("tr");
+      const row = el("tr", "stats-table-row");
 
       cols.forEach((col) => {
-        const cell = el("td");
+        const cell = el("td", "stats-table-cell");
+        const { key, format } = SUMM_TBL_C_M[col];
         const cellText = document.createTextNode(
-          popupData.stats[i][SUMM_TBL_C_M[col]],
+          formatData(popupData.stats[i][key], format),
         );
         cell.appendChild(cellText);
         row.appendChild(cell);
