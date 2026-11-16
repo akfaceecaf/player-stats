@@ -220,6 +220,10 @@
     color: rgb(143, 84, 0);
   }
 
+  .summary-text {
+    color: gray;
+  }
+
   .stats-table {
     width: 100%;
     border-collapse: collapse;
@@ -326,42 +330,47 @@
     const h2 = el("h2");
     h2.textContent = "Summary";
     summaryHeading.appendChild(h2);
+    summary.appendChild(summaryHeading);
 
-    // ***Summary Table
-    const summTblContainer = el("div", "summary-table-container");
-    const summTbl = el("table", "stats-table", "summary");
-    const summTblBody = el("tbody");
-    const cols = Object.keys(SUMM_TBL_C_M);
-    const row = el("tr", "stats-table-col-head");
-    // Column Names
-    cols.forEach((col) => {
-      const cell = el("td", "stats-table-cell");
-      const cellText = document.createTextNode(col);
-      cell.appendChild(cellText);
-      row.appendChild(cell);
-    });
-    summTblBody.appendChild(row);
-
-    // Row Values
-    popupData.stats.forEach((entry, i) => {
-      const row = el("tr", "stats-table-row");
-
+    if (popupData.stats.length == 0) {
+      const emptyDataText = el("p", "summary-text");
+      emptyDataText.innerHTML = "<i>No data to show.</i>";
+      summary.appendChild(emptyDataText);
+    } else {
+      // ***Summary Table
+      const summTblContainer = el("div", "summary-table-container");
+      const summTbl = el("table", "stats-table", "summary");
+      const summTblBody = el("tbody");
+      const cols = Object.keys(SUMM_TBL_C_M);
+      const row = el("tr", "stats-table-col-head");
+      // Column Names
       cols.forEach((col) => {
         const cell = el("td", "stats-table-cell");
-        const { key, format } = SUMM_TBL_C_M[col];
-        const cellText = document.createTextNode(
-          formatData(popupData.stats[i][key], format),
-        );
+        const cellText = document.createTextNode(col);
         cell.appendChild(cellText);
         row.appendChild(cell);
       });
       summTblBody.appendChild(row);
-    });
-    summTbl.appendChild(summTblBody);
-    summTblContainer.appendChild(summTbl);
 
-    summary.appendChild(summaryHeading);
-    summary.appendChild(summTblContainer);
+      // Row Values
+      popupData.stats.forEach((entry, i) => {
+        const row = el("tr", "stats-table-row");
+
+        cols.forEach((col) => {
+          const cell = el("td", "stats-table-cell");
+          const { key, format } = SUMM_TBL_C_M[col];
+          const cellText = document.createTextNode(
+            formatData(popupData.stats[i][key], format),
+          );
+          cell.appendChild(cellText);
+          row.appendChild(cell);
+        });
+        summTblBody.appendChild(row);
+      });
+      summTbl.appendChild(summTblBody);
+      summTblContainer.appendChild(summTbl);
+      summary.appendChild(summTblContainer);
+    }
 
     const closeButton = el("button", "close-button");
     closeButton.textContent = "CLOSE";
