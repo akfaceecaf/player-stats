@@ -19,7 +19,7 @@ def index():
 @app.exception_handler(NBADataError)
 def nba_data_exception_handler(req, exc: NBADataError):
     return JSONResponse(
-        {"message": f"could not fetch NBA data: {exc.message}"}, exc.status_code
+        {"message": f"Could not fetch NBA data: {exc.message}"}, exc.status_code
     )
 
 

@@ -5,6 +5,26 @@
   const mappedNodes = new Map();
   CSS.highlights.set("player-highlight", highlight);
 
+  // function to create element and add id, className
+  function el(tagName, className, id) {
+    const element = document.createElement(tagName);
+    if (className != null) element.className = className;
+    if (id != null) element.id = id;
+    return element;
+  }
+
+  let toast = null;
+  let toastTimer = null;
+
+  function showToast(text) {
+    toast?.remove();
+    clearTimeout(toastTimer);
+    toast = el("div", "toast");
+    toast.textContent = text;
+    shadow.appendChild(toast);
+    toastTimer = setTimeout(() => toast?.remove(), 3000);
+  }
+
   // get list of valid text nodes
   function getValidNodes() {
     let walker = document.createTreeWalker(
@@ -32,7 +52,7 @@
       texts: nodes.map((n) => n.nodeValue),
     });
     if (!response.ok) {
-      console.log(response.message);
+      showToast(response.message);
       return;
     }
 
@@ -145,6 +165,7 @@
   margin: 0;
   padding: 0;
   box-sizing: border-box;
+  font-family: Verdana, sans-serif, Helvetica;
   }
 
   h1 {
@@ -166,10 +187,10 @@
     gap: 0.5rem;
     padding: 0.5rem;
     margin: 0.5rem;
-    font-family: Verdana, sans-serif, Helvetica;
     border: 1px solid black;
     color: black;
     background-color: white;
+    box-shadow: 0 8px 8px rgba(0, 0, 0, 0.2);
   }
 
   .meta {
@@ -217,6 +238,19 @@
     gap: 0px;
     border: 1px solid black;
   }
+
+  .toast {
+    z-index: 9999999;
+    position: fixed;
+    right: 14px;
+    bottom: 14px;
+    font-size: 0.8rem;
+    padding: 8px;
+    color: white;
+    background-color: rgb(65, 65, 65);
+    border-radius: 5px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  }
   `);
   shadow.adoptedStyleSheets = [sheet];
   document.documentElement.append(host);
@@ -233,10 +267,12 @@
       type: "lookup",
       playerId: player.player.playerId,
     });
+
     if (!response.ok) {
-      console.log(response.message);
+      showToast(response.message);
       return;
     }
+
     // if hovered player changes while looking up player data, then don't show popup and reset
     if (popupPlayer !== hoveredPlayer) {
       popupPlayer = null;
@@ -246,14 +282,6 @@
 
     // render popup once all data is returned and loaded
     renderPopup();
-  }
-
-  // function to create element and add id, className
-  function el(tagName, className, id) {
-    const element = document.createElement(tagName);
-    if (className != null) element.className = className;
-    if (id != null) element.id = id;
-    return element;
   }
 
   function closePopup() {
