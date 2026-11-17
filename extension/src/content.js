@@ -25,31 +25,34 @@
     toastTimer = setTimeout(() => toast?.remove(), 3000);
   }
 
+  function isValid(node) {
+    if (
+      node.parentElement?.closest(SKIP_SELECTORS) ||
+      !(node.nodeValue ?? "").trim()
+    )
+      return false;
+    return true;
+  }
+
   // get list of valid text nodes
-  function getValidNodes() {
-    let walker = document.createTreeWalker(
-      document.body,
-      NodeFilter.SHOW_TEXT,
-      {
-        acceptNode(node) {
-          if (node.parentElement?.closest(SKIP_SELECTORS))
-            return NodeFilter.FILTER_REJECT;
-          if (!node.nodeValue.trim()) return NodeFilter.FILTER_REJECT;
-          return NodeFilter.FILTER_ACCEPT;
-        },
+  function getValidNodes(root) {
+    let walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+      acceptNode(node) {
+        if (!isValid(node)) return NodeFilter.FILTER_REJECT;
+        return NodeFilter.FILTER_ACCEPT;
       },
-    );
+    });
     const nodes = [];
-    while (walker.nextNode()) nodes.push(walker.currentNode);
+    let node;
+    while ((node = walker.nextNode())) nodes.push(node);
     return nodes;
   }
 
-  // parse document text elements and send to service worker
-  async function parse() {
-    const nodes = getValidNodes();
+  async function scanNodes(nodes) {
+    const origTexts = nodes.map((n) => n.nodeValue);
     const response = await chrome.runtime.sendMessage({
       type: "scan",
-      texts: nodes.map((n) => n.nodeValue),
+      texts: origTexts,
     });
     if (!response.ok) {
       showToast(response.message);
@@ -58,13 +61,22 @@
 
     // iterate through all nodes, for every valid node add highlight range
     const data = response.data;
-    highlight.clear();
-    mappedNodes.clear();
-
     data.forEach((res, i) => {
-      if (res.length > 0) {
+      // check if text passed for scanning matches the current nodeValue
+      // and node is still connected to the page DOM, else skip
+      if (
+        nodes[i].nodeValue === origTexts[i] &&
+        nodes[i].isConnected &&
+        res.length > 0
+      ) {
         // trace match back to node using index
         const node = nodes[i];
+        // handle race condition where callback highlights a node with existing ranges
+        // sync mappedNodes with highlight ranges
+        // e.g if multiple concurrent scan operations on the same node, each should clear any existing
+        // highlight before updating mappedNodes
+        untrackNode(node);
+
         const matches = [];
         // for each match create a new range, add to highlight
         res.forEach(({ start, end, text, player }) => {
@@ -81,15 +93,21 @@
             player,
           };
           matches.push(match);
-
-          // map node to check if if valid player string at caretPosition
-          mappedNodes.set(node, matches);
         });
+        // map node to check if if valid player string at caretPosition
+        mappedNodes.set(node, matches);
       }
     });
   }
 
-  parse();
+  // scan document text elements and send to service worker
+  async function scanPage() {
+    highlight.clear();
+    mappedNodes.clear();
+
+    const nodes = getValidNodes(document.body);
+    await scanNodes(nodes);
+  }
 
   // check if there is a caret position from a point
   function onCaret(x, y) {
@@ -405,10 +423,68 @@
     popup.style.top = `${top + window.scrollY}px`;
   }
 
+  // scan on content script startup, then observe changes
+  scanPage();
+  // remove highlight and mapping
+  function untrackNode(node) {
+    const matches = mappedNodes.get(node);
+    if (matches) {
+      matches.forEach(({ range }) => highlight.delete(range));
+      mappedNodes.delete(node);
+    }
+  }
+
+  let observer = new MutationObserver((mutations, observer) => {
+    function getAllTextNodes(nodes) {
+      let validNodes = [];
+      nodes.forEach((root) => {
+        if (isValid(root)) validNodes.push(root);
+        else validNodes = [...validNodes, ...getValidNodes(root)];
+      });
+      return validNodes;
+    }
+
+    let nodesToScan = new Set();
+    for (let mutation of mutations) {
+      if (mutation.type === "childList") {
+        // for each add / remove, get the full list of childNodes
+        const { addedNodes, removedNodes } = mutation;
+        let validAddNodes = getAllTextNodes(addedNodes);
+        let validRemoveNodes = getAllTextNodes(removedNodes);
+
+        validRemoveNodes.forEach((node) => untrackNode(node));
+        validAddNodes.forEach((node) => nodesToScan.add(node));
+      } else if (mutation.type === "characterData") {
+        untrackNode(mutation.target);
+        if (isValid(mutation.target)) {
+          nodesToScan.add(mutation.target);
+        }
+      }
+    }
+    if (nodesToScan.size > 0) {
+      scanNodes([...nodesToScan.values()]);
+    }
+  });
+
+  observer.observe(document.body, {
+    childList: true,
+    subtree: true,
+    characterData: true,
+  });
+
   // EVENT LISTENERS
-  POPUP_DELAY = 1000;
+  const POPUP_DELAY = 1000;
   let timeoutID;
   let hoveredPlayer;
+
+  // add event listener for scan on click
+  chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    if (message === "scan") {
+      scanPage();
+    } else {
+      showToast("Invalid message");
+    }
+  });
 
   // add event listener for mouse pointer position
   document.addEventListener("pointermove", (e) => {
