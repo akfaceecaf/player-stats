@@ -8,7 +8,7 @@ export const filterMatches = (matches) => {
   return matches.filter((res, i) => {
     const nextResult = matches[i + 1];
     if (nextResult) {
-      return nextResult.start > res.end;
+      return nextResult.start > res.end - 1;
     }
     return true;
   });
@@ -19,7 +19,7 @@ export const searchText = (text, strings) => {
   const results = ac.search(text);
   return results.map((res) => ({
     start: res[0] - (res[1][0].length - 1),
-    end: res[0],
+    end: res[0] + 1,
     text: res[1][0],
   }));
 };

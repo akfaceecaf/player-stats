@@ -25,119 +25,6 @@
     toastTimer = setTimeout(() => toast?.remove(), 3000);
   }
 
-  function isValid(node) {
-    if (
-      node.parentElement?.closest(SKIP_SELECTORS) ||
-      !(node.nodeValue ?? "").trim()
-    )
-      return false;
-    return true;
-  }
-
-  // get list of valid text nodes
-  function getValidNodes(root) {
-    let walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
-      acceptNode(node) {
-        if (!isValid(node)) return NodeFilter.FILTER_REJECT;
-        return NodeFilter.FILTER_ACCEPT;
-      },
-    });
-    const nodes = [];
-    let node;
-    while ((node = walker.nextNode())) nodes.push(node);
-    return nodes;
-  }
-
-  async function scanNodes(nodes) {
-    const origTexts = nodes.map((n) => n.nodeValue);
-    const response = await chrome.runtime.sendMessage({
-      type: "scan",
-      texts: origTexts,
-    });
-    if (!response.ok) {
-      showToast(response.message);
-      return;
-    }
-
-    // iterate through all nodes, for every valid node add highlight range
-    const data = response.data;
-    data.forEach((res, i) => {
-      // check if text passed for scanning matches the current nodeValue
-      // and node is still connected to the page DOM, else skip
-      if (
-        nodes[i].nodeValue === origTexts[i] &&
-        nodes[i].isConnected &&
-        res.length > 0
-      ) {
-        // trace match back to node using index
-        const node = nodes[i];
-        // handle race condition where callback highlights a node with existing ranges
-        // sync mappedNodes with highlight ranges
-        // e.g if multiple concurrent scan operations on the same node, each should clear any existing
-        // highlight before updating mappedNodes
-        untrackNode(node);
-
-        const matches = [];
-        // for each match create a new range, add to highlight
-        res.forEach(({ start, end, text, player }) => {
-          const range = new Range();
-          range.setStart(node, start);
-          range.setEnd(node, end + 1);
-          highlight.add(range);
-          const match = {
-            start,
-            end,
-            node,
-            range,
-            text,
-            player,
-          };
-          matches.push(match);
-        });
-        // map node to check if if valid player string at caretPosition
-        mappedNodes.set(node, matches);
-      }
-    });
-  }
-
-  // scan document text elements and send to service worker
-  async function scanPage() {
-    highlight.clear();
-    mappedNodes.clear();
-
-    const nodes = getValidNodes(document.body);
-    await scanNodes(nodes);
-  }
-
-  // check if there is a caret position from a point
-  function onCaret(x, y) {
-    if (document.caretPositionFromPoint) {
-      const range = document.caretPositionFromPoint(x, y);
-      if (range) {
-        return { node: range.offsetNode, offset: range.offset };
-      } else {
-        return;
-      }
-    }
-  }
-
-  function onPlayer(x, y) {
-    const caret = onCaret(x, y);
-    if (caret) {
-      // check if node and range is in valid map
-      const players = mappedNodes.get(caret.node);
-      if (players) {
-        const player = players.find(
-          (m) => m.start <= caret.offset && caret.offset <= m.end,
-        );
-        if (player) {
-          return player;
-        }
-      }
-    }
-    return null;
-  }
-
   // POPUP
   const SUMM_TBL_C_M = {
     Season: { key: "seasonId", format: "string" },
@@ -423,8 +310,93 @@
     popup.style.top = `${top + window.scrollY}px`;
   }
 
+  function isValid(node) {
+    if (
+      node.parentElement?.closest(SKIP_SELECTORS) ||
+      !(node.nodeValue ?? "").trim()
+    )
+      return false;
+    return true;
+  }
+
+  // get list of valid text nodes
+  function getValidNodes(root) {
+    let walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+      acceptNode(node) {
+        if (!isValid(node)) return NodeFilter.FILTER_REJECT;
+        return NodeFilter.FILTER_ACCEPT;
+      },
+    });
+    const nodes = [];
+    let node;
+    while ((node = walker.nextNode())) nodes.push(node);
+    return nodes;
+  }
+
+  async function scanNodes(nodes) {
+    const origTexts = nodes.map((n) => n.nodeValue);
+    const response = await chrome.runtime.sendMessage({
+      type: "scan",
+      texts: origTexts,
+    });
+    if (!response.ok) {
+      showToast(response.message);
+      return;
+    }
+
+    // iterate through all nodes, for every valid node add highlight range
+    const data = response.data;
+    data.forEach((res, i) => {
+      // check if text passed for scanning matches the current nodeValue
+      // and node is still connected to the page DOM, else skip
+      if (
+        nodes[i].nodeValue === origTexts[i] &&
+        nodes[i].isConnected &&
+        res.length > 0
+      ) {
+        // trace match back to node using index
+        const node = nodes[i];
+        // handle race condition where callback highlights a node with existing ranges
+        // sync mappedNodes with highlight ranges
+        // e.g if multiple concurrent scan operations on the same node, each should clear any existing
+        // highlight before updating mappedNodes
+        untrackNode(node);
+
+        const matches = [];
+        // for each match create a new range, add to highlight
+        res.forEach(({ start, end, text, player }) => {
+          const range = new Range();
+          range.setStart(node, start);
+          range.setEnd(node, end);
+          highlight.add(range);
+          const match = {
+            start,
+            end,
+            node,
+            range,
+            text,
+            player,
+          };
+          matches.push(match);
+        });
+        // map node to check if if valid player string at caretPosition
+        mappedNodes.set(node, matches);
+      }
+    });
+  }
+
+  // scan document text elements and send to service worker
+  async function scanPage() {
+    highlight.clear();
+    mappedNodes.clear();
+
+    const nodes = getValidNodes(document.body);
+    await scanNodes(nodes);
+  }
+
   // scan on content script startup, then observe changes
   scanPage();
+
   // remove highlight and mapping
   function untrackNode(node) {
     const matches = mappedNodes.get(node);
@@ -486,11 +458,45 @@
     }
   });
 
+  // check if there is a caret position from a point
+  function onCaret(x, y) {
+    if (document.caretPositionFromPoint) {
+      const range = document.caretPositionFromPoint(x, y);
+      if (range) {
+        return { node: range.offsetNode, offset: range.offset };
+      } else {
+        return;
+      }
+    }
+  }
+
+  // check that the coordinate is in a range rect box
+  function onRange(x, y, range) {
+    const rects = [...range.getClientRects()];
+    return rects.some(
+      (r) => x >= r.left && x <= r.right && y >= r.top && y <= r.bottom,
+    );
+  }
+
+  function onPlayer(x, y) {
+    const caret = onCaret(x, y);
+    if (caret) {
+      // check if node and range is in valid map
+      const players = mappedNodes.get(caret.node);
+      if (players) {
+        const player = players.find((m) => onRange(x, y, m.range));
+        if (player) {
+          return player;
+        }
+      }
+    }
+    return null;
+  }
+
   // add event listener for mouse pointer position
   document.addEventListener("pointermove", (e) => {
     // check if pointer is on a valid player node and range
     const player = onPlayer(e.clientX, e.clientY);
-
     // add delay for popup to check if hover was intentional
     if (!player || player !== hoveredPlayer) {
       clearTimeout(timeoutID);
