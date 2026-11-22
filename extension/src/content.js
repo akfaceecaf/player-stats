@@ -277,11 +277,6 @@
       summary.appendChild(summTblContainer);
     }
 
-    const closeButton = el("button", "close-button");
-    closeButton.textContent = "CLOSE";
-    closeButton.addEventListener("click", () => closePopup());
-    popup.appendChild(closeButton);
-
     popup.appendChild(meta);
     popup.appendChild(summary);
 
@@ -548,5 +543,15 @@
         showPopup(hoveredPlayer);
       }
     }, POPUP_DELAY);
+  });
+
+  document.addEventListener("pointerdown", (e) => {
+    if (popup && !e?.composedPath().includes(host)) {
+      closePopup();
+    }
+  });
+
+  document.addEventListener("scroll", (e) => {
+    if (popup) closePopup();
   });
 })();
