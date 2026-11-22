@@ -482,9 +482,6 @@
   });
 
   // EVENT LISTENERS
-  const POPUP_DELAY = 1000;
-  let timeoutID;
-  let hoveredPlayer;
 
   // add event listener for scan on click
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -530,23 +527,26 @@
     return null;
   }
 
+  const POPUP_DELAY = 1000;
+  let timeoutId;
+  let hoveredPlayer;
+  let lastX = 0;
+  let lastY = 0;
+  // let pointerTicking = false;
+
   // add event listener for mouse pointer position
   document.addEventListener("pointermove", (e) => {
     // check if pointer is on a valid player node and range
-    const player = onPlayer(e.clientX, e.clientY);
-    // add delay for popup to check if hover was intentional
-    if (!player || player !== hoveredPlayer) {
-      clearTimeout(timeoutID);
-      timeoutID = null;
-      if (player) {
-        hoveredPlayer = player;
-        timeoutID = setTimeout(() => {
-          showPopup(player);
-          timeoutID = null;
-        }, POPUP_DELAY);
-      } else {
-        hoveredPlayer = null;
+    lastX = e.clientX;
+    lastY = e.clientY;
+
+    clearTimeout(timeoutId);
+    hoveredPlayer = null;
+    timeoutId = setTimeout(() => {
+      hoveredPlayer = onPlayer(lastX, lastY);
+      if (hoveredPlayer) {
+        showPopup(hoveredPlayer);
       }
-    }
+    }, POPUP_DELAY);
   });
 })();
