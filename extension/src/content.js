@@ -334,6 +334,8 @@
   }
 
   async function scanNodes(nodes) {
+    if (nodes.length == 0) return;
+
     const origTexts = nodes.map((n) => n.nodeValue);
     const response = await chrome.runtime.sendMessage({
       type: "scan",
@@ -406,6 +408,38 @@
     }
   }
 
+  let allNodesToScan = new Set();
+  const DEBOUNCE_TIMEOUT = 500;
+  const MAX_WAIT_TIMEOUT = 1500;
+
+  function debounce(func, timeout, maxWait) {
+    let timer, maxTimer;
+    return () => {
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        clearTimeout(maxTimer);
+        maxTimer = null;
+        func();
+      }, timeout);
+      if (maxWait && !maxTimer) {
+        maxTimer = setTimeout(() => {
+          clearTimeout(timer);
+          maxTimer = null;
+          func();
+        }, maxWait);
+      }
+    };
+  }
+
+  const scanMutations = debounce(
+    () => {
+      scanNodes([...allNodesToScan.values()]);
+      allNodesToScan.clear();
+    },
+    DEBOUNCE_TIMEOUT,
+    MAX_WAIT_TIMEOUT,
+  );
+
   let observer = new MutationObserver((mutations, observer) => {
     function getAllTextNodes(nodes) {
       let validNodes = [];
@@ -434,7 +468,10 @@
       }
     }
     if (nodesToScan.size > 0) {
-      scanNodes([...nodesToScan.values()]);
+      for (let node of nodesToScan) {
+        allNodesToScan.add(node);
+      }
+      scanMutations();
     }
   });
 
