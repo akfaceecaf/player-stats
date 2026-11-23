@@ -36,7 +36,10 @@ def stats(player_id):
     raw_metadata = get_metadata(player_id)
     metadata = Metadata.from_api_res(raw_metadata)
     raw_stats = get_player_stats(player_id)
-    stats = [AveragesStatSet.from_api_res(s).to_json() for s in raw_stats]
+    stats = {
+        k: [AveragesStatSet.from_api_res(s).to_json() for s in v]
+        for k, v in raw_stats.items()
+    }
     image_url = get_image_url(player_id)
     return {
         "metadata": metadata.to_json(),

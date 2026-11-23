@@ -93,6 +93,31 @@
     color: gray;
   }
 
+  .tbl-toggle-container {
+    display: flex;
+    gap: 0.5rem;
+    margin: 0.5rem 0rem
+  }
+
+  .tbl-toggle-btn {
+    padding: 0.25rem;
+    font-size: 0.7rem;
+    background-color: rgb(238, 238, 238);
+    color: rgb(165, 35, 34);
+    border: 1px solid black;
+  }
+
+  .tbl-toggle-btn:not(.is-selected):hover {
+    color: rgb(255, 255, 255);
+    background-color: rgb(120, 120, 120);
+  }
+
+  .tbl-toggle-btn.is-selected {
+    color: rgb(255, 255, 255);
+    background-color: rgb(143, 84, 0);
+    border: 1px solid black;
+  } 
+  
   .stats-table {
     width: 100%;
     border-collapse: collapse;
@@ -163,7 +188,7 @@
     popup.remove();
   }
 
-  const SUMM_TBL_C_M = {
+  const TABLE_FIELD_MAP = {
     Season: { key: "seasonId", format: "string" },
     Team: { key: "teamAbv", format: "string" },
     G: { key: "gp", format: "int" },
@@ -187,20 +212,19 @@
         minimumFractionDigits: 1,
         maximumFractionDigits: 1,
       }).format(s),
-    fullDate: (s) => {
-      return new Intl.DateTimeFormat("en-US", {
+    fullDate: (s) =>
+      new Intl.DateTimeFormat("en-US", {
         month: "long",
         day: "numeric",
         year: "numeric",
-      }).format(Date.parse(s));
-    },
+      }).format(Date.parse(s)),
   };
 
   function formatData(value, format) {
     return FORMAT_MAP[format](value);
   }
 
-  const SUMMARY_MAP = {
+  const METADATA_MAP = {
     Position: "position",
     Team: "teamName",
     Weight: "weight",
@@ -209,6 +233,11 @@
     Country: "country",
     ImageUrl: "imageUrl",
   };
+
+  const CAREER_PER_GAME_TABLES = [
+    { name: "Regular Season", key: "SeasonTotalsRegularSeason" },
+    { name: "Playoffs", key: "SeasonTotalsPostSeason" },
+  ];
 
   // renders the popup
   function renderPopup() {
@@ -221,7 +250,7 @@
     // ***MEDIA DIV
     const media = el("div", "media-item");
     const img = el("img", "player-image");
-    img.setAttribute("src", popupData[SUMMARY_MAP["ImageUrl"]]);
+    img.setAttribute("src", popupData[METADATA_MAP["ImageUrl"]]);
     media.appendChild(img);
     meta.appendChild(media);
 
@@ -230,21 +259,16 @@
     const h1 = el("h1");
     h1.textContent = `${popupPlayer.player.firstName} ${popupPlayer.player.lastName}`;
     const p1 = el("p");
-    p1.innerHTML = `<strong>Position:</strong> ${popupData.metadata[SUMMARY_MAP["Position"]]}`;
+    p1.innerHTML = `<strong>Position:</strong> ${popupData.metadata[METADATA_MAP["Position"]]}`;
     const p2 = el("p");
-    p2.textContent = `${popupData.metadata[SUMMARY_MAP["Height"]]}, ${popupData.metadata[SUMMARY_MAP["Weight"]]}lb`;
+    p2.textContent = `${popupData.metadata[METADATA_MAP["Height"]]}, ${popupData.metadata[METADATA_MAP["Weight"]]}lb`;
     const p3 = el("p");
-    p3.innerHTML = `<strong>Team:</strong> ${popupData.metadata[SUMMARY_MAP["Team"]]}`;
+    p3.innerHTML = `<strong>Team:</strong> ${popupData.metadata[METADATA_MAP["Team"]]}`;
     const p4 = el("p");
-    p4.innerHTML = `<strong>Born:</strong> ${formatData(popupData.metadata[SUMMARY_MAP["BirthDate"]], "fullDate")}`;
+    p4.innerHTML = `<strong>Born:</strong> ${formatData(popupData.metadata[METADATA_MAP["BirthDate"]], "fullDate")}`;
     const p5 = el("p");
-    p5.innerHTML = `<strong>Country:</strong> ${popupData.metadata[SUMMARY_MAP["Country"]]}`;
-    div.appendChild(h1);
-    div.appendChild(p1);
-    div.appendChild(p2);
-    div.appendChild(p3);
-    div.appendChild(p4);
-    div.appendChild(p5);
+    p5.innerHTML = `<strong>Country:</strong> ${popupData.metadata[METADATA_MAP["Country"]]}`;
+    div.append(h1, p1, p2, p3, p4, p5);
     meta.appendChild(div);
 
     // **Summary DIV
@@ -257,48 +281,79 @@
     summaryHeading.appendChild(h2);
     summary.appendChild(summaryHeading);
 
-    if (popupData.stats.length == 0) {
-      const emptyDataText = el("p", "summary-text");
-      emptyDataText.innerHTML = "<i>No data to show.</i>";
-      summary.appendChild(emptyDataText);
-    } else {
-      // ***Summary Table
-      const summTblContainer = el("div", "summary-table-container");
-      const summTbl = el("table", "stats-table", "summary");
-      const summTblBody = el("tbody");
-      const cols = Object.keys(SUMM_TBL_C_M);
-      const row = el("tr", "stats-table-col-head");
-      // Column Names
-      cols.forEach((col) => {
-        const cell = el("td", "stats-table-cell");
-        const cellText = document.createTextNode(col);
-        cell.appendChild(cellText);
-        row.appendChild(cell);
+    const careerTblToggleContainer = el("div", "tbl-toggle-container");
+    for (let t of CAREER_PER_GAME_TABLES) {
+      const btn = el("button", "tbl-toggle-btn", t.key);
+      btn.textContent = t.name;
+      btn.addEventListener("click", () => {
+        if (tblKey != t.key) {
+          popupTblContainer?.remove();
+          tblKey = t.key;
+          setToggleState();
+          renderTable();
+        }
       });
-      summTblBody.appendChild(row);
+      careerTblToggleContainer.append(btn);
+    }
+    summary.append(careerTblToggleContainer);
 
-      // Row Values
-      popupData.stats.forEach((entry, i) => {
-        const row = el("tr", "stats-table-row");
+    function setToggleState() {
+      for (let btn of careerTblToggleContainer.childNodes) {
+        if (btn.id == tblKey) btn.classList.add("is-selected");
+        else btn.classList.remove("is-selected");
+        console.log(btn.classList);
+      }
+    }
 
+    let popupTblContainer;
+    let tblKey = "SeasonTotalsRegularSeason";
+    setToggleState();
+
+    function renderTable() {
+      const tblContainer = el("div", "summary-table-container");
+      const data = popupData.stats[tblKey];
+      if (!data || data.length == 0) {
+        const emptyDataText = el("p", "summary-text");
+        emptyDataText.innerHTML = "<i>No data to show.</i>";
+        tblContainer.appendChild(emptyDataText);
+      } else {
+        // ***Summary Table
+        const tbl = el("table", "stats-table", "summary");
+        const tblBody = el("tbody");
+        const cols = Object.keys(TABLE_FIELD_MAP);
+        const row = el("tr", "stats-table-col-head");
+        // Column Names
         cols.forEach((col) => {
           const cell = el("td", "stats-table-cell");
-          const { key, format } = SUMM_TBL_C_M[col];
-          const cellText = document.createTextNode(
-            formatData(popupData.stats[i][key], format),
-          );
+          const cellText = document.createTextNode(col);
           cell.appendChild(cellText);
           row.appendChild(cell);
         });
-        summTblBody.appendChild(row);
-      });
-      summTbl.appendChild(summTblBody);
-      summTblContainer.appendChild(summTbl);
-      summary.appendChild(summTblContainer);
-    }
+        tblBody.appendChild(row);
 
-    popup.appendChild(meta);
-    popup.appendChild(summary);
+        // Row Values
+        data.forEach((_, i) => {
+          const row = el("tr", "stats-table-row");
+
+          cols.forEach((col) => {
+            const cell = el("td", "stats-table-cell");
+            const { key, format } = TABLE_FIELD_MAP[col];
+            const cellText = document.createTextNode(
+              formatData(data[i][key], format),
+            );
+            cell.appendChild(cellText);
+            row.appendChild(cell);
+          });
+          tblBody.appendChild(row);
+        });
+        tbl.appendChild(tblBody);
+        tblContainer.appendChild(tbl);
+      }
+      summary.append(tblContainer);
+      popupTblContainer = tblContainer;
+    }
+    renderTable();
+    popup.append(meta, summary);
 
     // create a bounding box around the name to visualize area
     const clientRect = popupPlayer.range.getBoundingClientRect();
