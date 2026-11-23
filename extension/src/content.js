@@ -26,42 +26,6 @@
   }
 
   // POPUP
-  const SUMM_TBL_C_M = {
-    Season: { key: "seasonId", format: "string" },
-    Team: { key: "teamAbv", format: "string" },
-    G: { key: "gp", format: "int" },
-    PTS: { key: "pts", format: "float" },
-    REB: { key: "reb", format: "float" },
-    AST: { key: "ast", format: "float" },
-    STL: { key: "stl", format: "float" },
-    BLK: { key: "blk", format: "float" },
-    "FG%": { key: "fgPct", format: "percent" },
-    "FG3%": { key: "fg3Pct", format: "percent" },
-    "FT%": { key: "ftPct", format: "percent" },
-  };
-
-  const FORMAT_MAP = {
-    string: (s) => s,
-    int: (s) => s,
-    float: (s) => s.toFixed(1),
-    percent: (s) =>
-      new Intl.NumberFormat("en-US", {
-        style: "percent",
-        minimumFractionDigits: 1,
-        maximumFractionDigits: 1,
-      }).format(s),
-  };
-
-  function formatData(value, format) {
-    return FORMAT_MAP[format](value);
-  }
-
-  const SUMMARY_MAP = {
-    Position: "position",
-    Team: "teamName",
-    ImageUrl: "imageUrl",
-  };
-
   const host = el("div", null, "host");
   const shadow = host.attachShadow({ mode: "closed" });
   const sheet = new CSSStyleSheet();
@@ -199,6 +163,53 @@
     popup.remove();
   }
 
+  const SUMM_TBL_C_M = {
+    Season: { key: "seasonId", format: "string" },
+    Team: { key: "teamAbv", format: "string" },
+    G: { key: "gp", format: "int" },
+    PTS: { key: "pts", format: "float" },
+    REB: { key: "reb", format: "float" },
+    AST: { key: "ast", format: "float" },
+    STL: { key: "stl", format: "float" },
+    BLK: { key: "blk", format: "float" },
+    "FG%": { key: "fgPct", format: "percent" },
+    "FG3%": { key: "fg3Pct", format: "percent" },
+    "FT%": { key: "ftPct", format: "percent" },
+  };
+
+  const FORMAT_MAP = {
+    string: (s) => s,
+    int: (s) => s,
+    float: (s) => s.toFixed(1),
+    percent: (s) =>
+      new Intl.NumberFormat("en-US", {
+        style: "percent",
+        minimumFractionDigits: 1,
+        maximumFractionDigits: 1,
+      }).format(s),
+    fullDate: (s) => {
+      return new Intl.DateTimeFormat("en-US", {
+        month: "long",
+        day: "numeric",
+        year: "numeric",
+      }).format(Date.parse(s));
+    },
+  };
+
+  function formatData(value, format) {
+    return FORMAT_MAP[format](value);
+  }
+
+  const SUMMARY_MAP = {
+    Position: "position",
+    Team: "teamName",
+    Weight: "weight",
+    Height: "height",
+    BirthDate: "birthDate",
+    Country: "country",
+    ImageUrl: "imageUrl",
+  };
+
   // renders the popup
   function renderPopup() {
     if (!popupPlayer || !popupData) return;
@@ -219,12 +230,21 @@
     const h1 = el("h1");
     h1.textContent = `${popupPlayer.player.firstName} ${popupPlayer.player.lastName}`;
     const p1 = el("p");
-    p1.textContent = `Position: ${popupData.metadata[SUMMARY_MAP["Position"]]}`;
+    p1.innerHTML = `<strong>Position:</strong> ${popupData.metadata[SUMMARY_MAP["Position"]]}`;
     const p2 = el("p");
-    p2.textContent = `Team: ${popupData.metadata[SUMMARY_MAP["Team"]]}`;
+    p2.textContent = `${popupData.metadata[SUMMARY_MAP["Height"]]}, ${popupData.metadata[SUMMARY_MAP["Weight"]]}lb`;
+    const p3 = el("p");
+    p3.innerHTML = `<strong>Team:</strong> ${popupData.metadata[SUMMARY_MAP["Team"]]}`;
+    const p4 = el("p");
+    p4.innerHTML = `<strong>Born:</strong> ${formatData(popupData.metadata[SUMMARY_MAP["BirthDate"]], "fullDate")}`;
+    const p5 = el("p");
+    p5.innerHTML = `<strong>Country:</strong> ${popupData.metadata[SUMMARY_MAP["Country"]]}`;
     div.appendChild(h1);
     div.appendChild(p1);
     div.appendChild(p2);
+    div.appendChild(p3);
+    div.appendChild(p4);
+    div.appendChild(p5);
     meta.appendChild(div);
 
     // **Summary DIV
